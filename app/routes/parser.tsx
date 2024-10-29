@@ -243,7 +243,7 @@ const JsonLogicConverter = () => {
     <div className="w-full max-w-4xl mx-auto space-y-4">
       <Card>
         <CardHeader>
-          <CardTitle>JsonLogic to JSON Schema Converter</CardTitle>
+          <CardTitle>JSON Schema to JsonLogic Converter</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-2 gap-4">
