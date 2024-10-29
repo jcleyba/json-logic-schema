@@ -55,13 +55,14 @@ class SchemaToJsonLogic {
 
     // Handle pattern
     if (schema.pattern) {
+      const defaultValue = schema.default || "";
       if (schema.pattern.startsWith("^")) {
-        return { startsWith: [{ var: "value" }, schema.pattern.slice(1)] };
+        return { startsWith: [{ var: "value" }, defaultValue] };
       }
       if (schema.pattern.endsWith("$")) {
-        return { endsWith: [{ var: "value" }, schema.pattern.slice(0, -1)] };
+        return { endsWith: [{ var: "value" }, defaultValue] };
       }
-      return { match: [{ var: "value" }, schema.pattern] };
+      return { match: [{ var: "value" }, defaultValue] };
     }
 
     // Handle logical operators
@@ -93,6 +94,26 @@ class SchemaToJsonLogic {
       return conditions.length === 1 ? conditions[0] : { and: conditions };
     }
 
+    // Handle boolean type
+    if (schema.type === "boolean") {
+      return { "==": [{ var: "value" }, true] }; // Default comparison, can be overridden by other rules
+    }
+
+    // Handle array type
+    if (schema.type === "array" && schema.items) {
+      if (schema.items.enum) {
+        // For arrays with enum items, check if all items are in the enum
+        return {
+          all: [
+            { var: "value" },
+            { in: [{ var: "" }, schema.items.enum] }
+          ]
+        };
+      }
+      // Add more array type handling as needed
+      return this.convert(schema.items);
+    }
+
     return schema;
   }
 }
@@ -122,11 +143,13 @@ const JsonLogicConverter = () => {
         "properties": {
           "firstName": {
             "type": "string",
-            "pattern": "^[A-Z][a-z]+$"
+            "pattern": "^[A-Z][a-z]+$",
+            "default": "John"
           },
           "lastName": {
             "type": "string",
-            "pattern": "^[A-Z][a-zA-Z'-]+$"
+            "pattern": "^[A-Z][a-zA-Z'-]+$",
+            "default": "Doe"
           },
           "age": {
             "type": "number",
@@ -157,7 +180,8 @@ const JsonLogicConverter = () => {
           },
           "job": {
             "type": "string",
-            "pattern": "^[A-Za-z\\\\s]+$"
+            "pattern": "^[A-Za-z\\\\s]+$",
+            "default": "Engineer"
           },
           "description": {
             "type": "string",
@@ -166,15 +190,18 @@ const JsonLogicConverter = () => {
           },
           "birthdate": {
             "type": "string",
-            "pattern": "^\\\\d{4}-\\\\d{2}-\\\\d{2}$"
+            "pattern": "^\\\\d{4}-\\\\d{2}-\\\\d{2}$",
+            "default": "2000-01-01"
           },
           "datetime": {
             "type": "string",
-            "pattern": "^\\\\d{4}-\\\\d{2}-\\\\d{2}T\\\\d{2}:\\\\d{2}:\\\\d{2}Z$"
+            "pattern": "^\\\\d{4}-\\\\d{2}-\\\\d{2}T\\\\d{2}:\\\\d{2}:\\\\d{2}Z$",
+            "default": "2000-01-01T00:00:00Z"
           },
           "alarm": {
             "type": "string",
-            "pattern": "^\\\\d{2}:\\\\d{2}$"
+            "pattern": "^\\\\d{2}:\\\\d{2}$",
+            "default": "00:00"
           }
         }
       },

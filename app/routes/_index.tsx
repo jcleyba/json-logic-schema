@@ -348,7 +348,7 @@ const JsonLogicConverter = () => {
     simple: '{\n  "==": [{ "var": "age" }, 18]\n}',
     complex:
       '{\n  "and": [\n    { ">=": [{ "var": "age" }, 18] },\n    { "in": [{ "var": "status" }, ["active", "pending"]] }\n  ]\n}',
-    between: '{\n  "between": [{ "var": "score" }, 0, 100]\n}',
+    between: '{\n  "and": [\n    { ">=": [{ "var": "score" }, 0] },\n    { "<=": [{ "var": "score" }, 100] }\n  ]\n}',
     nested:
       '{\n  "or": [\n    { "and": [\n      { ">": [{ "var": "age" }, 18] },\n      { "<": [{ "var": "age" }, 65] }\n    ]},\n    { "==": [{ "var": "vipStatus" }, true] }\n  ]\n}',
     stringPattern:
