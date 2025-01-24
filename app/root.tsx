@@ -66,6 +66,11 @@ export default function Root() {
                   JsonLogic example
                 </Link>
               </li>
+              <li>
+                <Link to="/query-to-schema" className="hover:text-gray-300">
+                  QB Json to Schema example
+                </Link>
+              </li>
             </ul>
           </div>
         </nav>

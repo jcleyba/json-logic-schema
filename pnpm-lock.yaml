@@ -32,6 +32,9 @@ importers:
       '@remix-run/serve':
         specifier: ^2.13.1
         version: 2.13.1(typescript@5.3.3)
+      '@types/json-schema':
+        specifier: ^7.0.15
+        version: 7.0.15
       ajv:
         specifier: ^8.17.1
         version: 8.17.1
@@ -65,6 +68,9 @@ importers:
       json-logic-js:
         specifier: ^2.0.5
         version: 2.0.5
+      json-schema:
+        specifier: ^0.4.0
+        version: 0.4.0
       lucide-react:
         specifier: ^0.453.0
         version: 0.453.0(react@18.2.0)
@@ -1160,6 +1166,9 @@ packages:
   '@types/json-logic-js@2.0.7':
     resolution: {integrity: sha512-fucvZmbjqa1+gpw/nIwcP+ZIYHTvmwxuQQFKw/yU7+ZSD63z/xgY5pWN7sYUDRzg2Wf9STapL+7c66FNzhU6+Q==}
 
+  '@types/json-schema@7.0.15':
+    resolution: {integrity: sha512-5+fP8P8MFNC+AyZCDxrB2pkZFPGzqQWUzpSeuuVLvm8VMcorNYavBqoFcxK8bQz4Qsbn4oUEEem4wDLfcysGHA==}
+
   '@types/mdast@3.0.15':
     resolution: {integrity: sha512-LnwD+mUEfxWMa1QpDraczIn6k0Ee3SMicuYSSzS6ZYl2gKS09EClnJYGd8Du6rfc5r/GZEk5o1mRb8TaTj03sQ==}
 
@@ -2052,6 +2061,9 @@ packages:
 
   json-schema-traverse@1.0.0:
     resolution: {integrity: sha512-NM8/P9n3XjXhIZn1lLhkFaACTOURQXjWhV4BA/RnOv8xvgqtqpAX9IO4mRQxSx1Rlo4tqzeqb0sOlruaOy3dug==}
+
+  json-schema@0.4.0:
+    resolution: {integrity: sha512-es94M3nTIfsEPisRafak+HDLfHXnKBhV3vU5eqPcS3flIWqcxJWgXHXiey3YrpaNsanY5ei1VoYEbOzijuq9BA==}
 
   json5@2.2.3:
     resolution: {integrity: sha512-XmOWe7eyHYH14cLdVPoyg+GOH3rYX++KpzrylJwSW98t3Nk+U8XOl8FWKOgwtzdb8lXGf6zYwDUzeHMWfxasyg==}
@@ -4464,6 +4476,8 @@ snapshots:
 
   '@types/json-logic-js@2.0.7': {}
 
+  '@types/json-schema@7.0.15': {}
+
   '@types/mdast@3.0.15':
     dependencies:
       '@types/unist': 2.0.11
@@ -5456,6 +5470,8 @@ snapshots:
   json-parse-even-better-errors@3.0.2: {}
 
   json-schema-traverse@1.0.0: {}
+
+  json-schema@0.4.0: {}
 
   json5@2.2.3: {}
 

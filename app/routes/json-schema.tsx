@@ -1,6 +1,6 @@
 import { ajvResolver } from "@hookform/resolvers/ajv";
 import { json } from "@remix-run/node";
-import Ajv from "ajv";
+import Ajv, { JSONSchemaType } from "ajv";
 import { useForm } from "react-hook-form";
 
 // Define the JSON Schema
@@ -167,7 +167,7 @@ export default function ExpenseForm() {
     watch,
     formState: { errors },
   } = useForm({
-    resolver: ajvResolver(schema),
+    resolver: ajvResolver(schema as JSONSchemaType<string>),
     mode: "onChange",
   });
 

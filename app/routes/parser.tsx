@@ -3,120 +3,186 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { AlertCircle, CheckCircle2 } from "lucide-react";
 import { useState } from "react";
 
-class SchemaToJsonLogic {
-  convert(schema: any): any {
-    if (!schema || typeof schema !== "object") {
-      return schema;
-    }
+import type { JSONSchema7, JSONSchema7Definition } from "json-schema";
+import type { JsonLogicVar } from "react-querybuilder";
 
-    // Handle $ref
-    if (schema.$ref) {
+// Define precise types for JSON Logic operations
+type JsonLogicComparison =
+  | { "==": [JsonLogicVar, JsonLogicVar] }
+  | { "===": [JsonLogicVar, JsonLogicVar] }
+  | { "!=": [JsonLogicVar, JsonLogicVar] }
+  | { "!==": [JsonLogicVar, JsonLogicVar] }
+  | { ">=": [JsonLogicVar, JsonLogicVar] }
+  | { "<=": [JsonLogicVar, JsonLogicVar] }
+  | { ">": [JsonLogicVar, JsonLogicVar] }
+  | { "<": [JsonLogicVar, JsonLogicVar] }
+  | { between: [number, JsonLogicVar, number] | [JsonLogicVar, number] }
+  | { gte: [number, JsonLogicVar, number] | [JsonLogicVar, number] }
+  | { lt: [JsonLogicVar, JsonLogicVar] }
+  | { lte: [JsonLogicVar, JsonLogicVar] }
+  | { equal: [JsonLogicVar, JsonLogicVar] };
+
+type JsonLogicString =
+  | {
+      startsWith: [JsonLogicVar, string];
+    }
+  | {
+      endsWith: [JsonLogicVar, string];
+    };
+
+type JsonLogicArray = {
+  in: [JsonLogicValue, JsonLogicValue[]];
+};
+
+type JsonLogicLogical =
+  | { and: JsonLogicVar[] }
+  | { "&&": JsonLogicVar[] }
+  | { or: JsonLogicVar[] }
+  | { "||": JsonLogicVar[] }
+  | { "!": JsonLogicVar[] }
+  | { not: JsonLogicVar[] };
+
+type JsonLogicValue = JsonLogicVar | string | number | boolean;
+export type JsonLogicObject =
+  | JsonLogicVar
+  | JsonLogicComparison
+  | JsonLogicString
+  | JsonLogicArray
+  | JsonLogicLogical
+  | Record<string, unknown>;
+
+// Type guard functions
+const isJSONSchema7 = (schema: JSONSchema7Definition): schema is JSONSchema7 =>
+  typeof schema === "object";
+
+// Main converter function with type safety
+export const convert = (schema: JSONSchema7): JsonLogicObject => {
+  if (!isJSONSchema7(schema)) {
+    return {};
+  }
+
+  // Handle $ref
+  if (schema.$ref) {
+    return {
+      var: schema.$ref
+        .replace("#/properties/", "")
+        .replaceAll("/properties/", "."),
+    };
+  }
+
+  // Handle const with type safety
+  if ("const" in schema) {
+    return {
+      "==": [{ var: "value" }, schema.const as JsonLogicValue],
+    };
+  }
+
+  // Handle type + range restrictions for both numbers and dates
+  if (
+    (schema.type === "number" || schema.type === "string") &&
+    ("minimum" in schema ||
+      "maximum" in schema ||
+      "exclusiveMinimum" in schema ||
+      "exclusiveMaximum" in schema)
+  ) {
+    if ("minimum" in schema && "maximum" in schema) {
+      return { "<=": [schema.minimum, { var: "value" }, schema.maximum] };
+    }
+    if ("minimum" in schema) {
+      return { ">=": [{ var: "value" }, schema.minimum] };
+    }
+    if ("maximum" in schema) {
+      return { "<=": [{ var: "value" }, schema.maximum] };
+    }
+    if ("exclusiveMinimum" in schema) {
+      return { ">": [{ var: "value" }, schema.exclusiveMinimum] };
+    }
+    if ("exclusiveMaximum" in schema) {
+      return { "<": [{ var: "value" }, schema.exclusiveMaximum] };
+    }
+  }
+
+  // Handle enum
+  if (schema.enum) {
+    return {
+      in: [{ var: "value" }, schema.enum as unknown[]],
+    };
+  }
+
+  // Handle pattern
+  if (schema.pattern) {
+    if (schema.pattern.startsWith("^")) {
       return {
-        var: schema.$ref
-          .replace("#/properties/", "")
-          .replace(/\/properties\//g, "."),
+        startsWith: [{ var: "value" }, schema.pattern],
       };
     }
-
-    // Handle const
-    if ("const" in schema) {
-      return { "==": [{ var: "value" }, schema.const] };
+    if (schema.pattern.endsWith("$")) {
+      return {
+        endsWith: [{ var: "value" }, schema.pattern],
+      };
     }
-
-    // Handle type + range restrictions for both numbers and dates
-    if (
-      (schema.type === "number" || schema.type === "string") &&
-      ("minimum" in schema ||
-        "maximum" in schema ||
-        "exclusiveMinimum" in schema ||
-        "exclusiveMaximum" in schema)
-    ) {
-      if ("minimum" in schema && "maximum" in schema) {
-        return { "<=": [schema.minimum, { var: "value" }, schema.maximum] };
-      }
-      if ("minimum" in schema) {
-        return { ">=": [{ var: "value" }, schema.minimum] };
-      }
-      if ("maximum" in schema) {
-        return { "<=": [{ var: "value" }, schema.maximum] };
-      }
-      if ("exclusiveMinimum" in schema) {
-        return { ">": [{ var: "value" }, schema.exclusiveMinimum] };
-      }
-      if ("exclusiveMaximum" in schema) {
-        return { "<": [{ var: "value" }, schema.exclusiveMaximum] };
-      }
-    }
-
-    // Handle enum
-    if (schema.enum) {
-      return { in: [{ var: "value" }, schema.enum] };
-    }
-
-    // Handle pattern
-    if (schema.pattern) {
-      const defaultValue = schema.default || "";
-      if (schema.pattern.startsWith("^")) {
-        return { startsWith: [{ var: "value" }, defaultValue] };
-      }
-      if (schema.pattern.endsWith("$")) {
-        return { endsWith: [{ var: "value" }, defaultValue] };
-      }
-      return { match: [{ var: "value" }, defaultValue] };
-    }
-
-    // Handle logical operators
-    if (schema.allOf) {
-      return { and: schema.allOf.map((sch: any) => this.convert(sch)) };
-    }
-    if (schema.anyOf) {
-      return { or: schema.anyOf.map((sch: any) => this.convert(sch)) };
-    }
-    if (schema.not) {
-      return { "!": this.convert(schema.not) };
-    }
-
-    // Handle properties
-    if (schema.properties) {
-      const conditions = Object.entries(schema.properties).map(
-        ([key, value]: [string, any]) => {
-          const converted = this.convert(value);
-          // Replace all {var: "value"} with {var: key}
-          const replacedVars = JSON.parse(
-            JSON.stringify(converted).replace(
-              /"var"\s*:\s*"value"/g,
-              `"var": "${key}"`
-            )
-          );
-          return replacedVars;
-        }
-      );
-      return conditions.length === 1 ? conditions[0] : { and: conditions };
-    }
-
-    // Handle boolean type
-    if (schema.type === "boolean") {
-      return { "==": [{ var: "value" }, true] }; // Default comparison, can be overridden by other rules
-    }
-
-    // Handle array type
-    if (schema.type === "array" && schema.items) {
-      if (schema.items.enum) {
-        // For arrays with enum items, check if all items are in the enum
-        return {
-          all: [
-            { var: "value" },
-            { in: [{ var: "" }, schema.items.enum] }
-          ]
-        };
-      }
-      // Add more array type handling as needed
-      return this.convert(schema.items);
-    }
-
-    return schema;
   }
-}
+
+  // Handle logical operators
+  if (schema.allOf) {
+    return {
+      and: schema.allOf
+        .filter((sch) => isJSONSchema7(sch))
+        .map((sch) => convert(sch)),
+    };
+  }
+  if (schema.anyOf) {
+    return {
+      or: schema.anyOf
+        .filter((sch) => isJSONSchema7(sch))
+        .map((sch) => convert(sch)),
+    };
+  }
+  if (schema.not && isJSONSchema7(schema.not)) {
+    return { "!": convert(schema.not) };
+  }
+
+  // Handle properties with type safety
+  if (schema.properties) {
+    const conditions = Object.entries(schema.properties).map(([key, value]) => {
+      if (!isJSONSchema7(value)) return {};
+
+      const converted = convert(value);
+      const replacedVars = JSON.parse(
+        JSON.stringify(converted).replaceAll(
+          /"var"\s*:\s*"value"/g,
+          `"var": "${key}"`
+        )
+      ) as JsonLogicObject;
+
+      return replacedVars;
+    });
+
+    return conditions.length === 1 ? conditions[0] : { and: conditions };
+  }
+
+  // Handle boolean type
+  if (schema.type === "boolean") {
+    return { "==": [{ var: "value" }, true] }; // Default comparison, can be overridden by other rules
+  }
+
+  // Handle array type
+  if (
+    schema.type === "array" &&
+    schema.items &&
+    !Array.isArray(schema.items) &&
+    isJSONSchema7(schema.items)
+  ) {
+    if (schema.items.enum) {
+      return {
+        all: [{ var: "value" }, { in: [{ var: "" }, schema.items.enum] }],
+      };
+    }
+    return convert(schema.items);
+  }
+
+  return {};
+};
 
 const JsonLogicConverter = () => {
   const [inputValue, setInputValue] = useState(
@@ -228,8 +294,7 @@ const JsonLogicConverter = () => {
   const handleConvert = () => {
     try {
       const schema = JSON.parse(inputValue);
-      const converter = new SchemaToJsonLogic();
-      const result = converter.convert(schema);
+      const result = convert(schema);
       setOutputValue(JSON.stringify(result, null, 2));
       setError("");
       setSuccess(true);
